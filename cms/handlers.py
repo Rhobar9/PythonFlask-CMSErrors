@@ -8,6 +8,14 @@ from cms.admin.models import Content, Type
 from logging import getLogger, INFO, WARN, ERROR
 from logging.handlers import RotatingFileHandler
 from time import strftime
+from traceback import format_exc
+
+
+@app.context_processor
+def inject_titles():
+    titles = Content.query.with_entities(Content.slug,
+                                         Content.title).join(Type).filter(Type.name == 'page')
+    return dict(titles=titles)
 
 
 request_log = getLogger('werkzeug')
@@ -34,4 +42,24 @@ def after_request(response):
                     request.scheme.upper(), response.status_code)
     return response
 
+def inject_titles():
+    titles = Content.query.with_entities()
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('not_found.html'), 404
+
+error_log = configure_logging('error', ERROR)
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    tb = format_exc()
+    error_log.error('%s - - %s "%s %s %s" 500 -\n%s', request.remote_addr, timestamp,
+                    request.method, request.path, request.scheme.upper(), tb)
+
+    original = getattr(e, 'original_exception', None)
+
+    if original is None:
+        return render_template('error.html'), 500
+    return render_template('error.html', error=original), 500
 

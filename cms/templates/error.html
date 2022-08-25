@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block content %}
+    <p>{{ error }}</p>
+    Error 500 has occurred. <a href="{{ url_for('index', slug='home') }}">Return</a>
+{% endblock %}

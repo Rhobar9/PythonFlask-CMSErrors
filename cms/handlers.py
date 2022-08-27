@@ -9,7 +9,7 @@ from logging import getLogger, INFO, WARN, ERROR
 from logging.handlers import RotatingFileHandler
 from time import strftime
 from traceback import format_exc
-
+from cms.admin.auth import unauthroized
 
 @app.context_processor
 def inject_titles():
@@ -62,4 +62,11 @@ def handle_exception(e):
     if original is None:
         return render_template('error.html'), 500
     return render_template('error.html', error=original), 500
+
+unauthroized_log = configure_logging('unauthorized', WARN)
+
+@unauthroized.connect
+def log_unauthorized(app, user_id, username, **kwargs):
+    unauthroized_log.warning('Unauthroized: %s %s %s', timestamp, user_id,
+                             username)
 
